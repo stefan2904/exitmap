@@ -38,7 +38,7 @@ def readcert(exit_fpr):
         pagereader = csv.DictReader(csvfile, delimiter=',')
         for page in pagereader:
             DOMAIN = page['webpage']
-            print('\n%s' % DOMAIN)
+            print('\n[%s]' % DOMAIN)
             HTTP_HEADERS = [
                 ("Host",
                  DOMAIN),
@@ -55,12 +55,12 @@ def readcert(exit_fpr):
                 ("Content-Length",
                  "0")]
             try:
-                print('initializing HTTPSConnection ...')
+                print('[%s] initializing HTTPSConnection ...' % DOMAIN)
                 conn = httplib.HTTPSConnection(DOMAIN, PORT)
-                print('requesting ...')
+                print('[%s] requesting ...' % DOMAIN)
                 conn.request(
                     "GET", "/", headers=collections.OrderedDict(HTTP_HEADERS))
-                print('get response ...')
+                print('[%s] get response ...' % DOMAIN)
                 response = conn.getresponse()
             except:  # catch *all* exceptions
                 err = sys.exc_info()[0]
@@ -68,7 +68,7 @@ def readcert(exit_fpr):
                 # print(exit_url)
                 print(err)
                 print("\n")
-            print("OK")
+            print("[%s] OK" % DOMAIN)
 
     print("Exit")
 
