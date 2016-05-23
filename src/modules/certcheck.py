@@ -33,7 +33,6 @@ def readcert(exit_fpr):
 
     exit_url = util.exiturl(exit_fpr)
     log.debug("Probing exit relay \"%s\"." % exit_url)
-    print(exit_url)
 
     with open('top-1m.csv') as csvfile:
         pagereader = csv.DictReader(csvfile, delimiter=',')
@@ -63,15 +62,16 @@ def readcert(exit_fpr):
                 print("\n")
                 print(DOMAIN)
                 print(exit_url)
-                asn1cert = ssl.get_server_certificate((DOMAIN, PORT))
-                x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, asn1cert)
-                print(x509.digest("sha256"))
-                #print(err)
-                #print(err.__class__.__name__)
+                print("Error: " + str(err))
+                try:
+                    asn1cert = ssl.get_server_certificate((DOMAIN, PORT))
+                    x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, asn1cert)
+                    print(x509.digest("sha256"))
+                except Exception as err:
+                    print(err)
                 print("\n")
             except Exception as err:
                pass
-            mysock = None
 
 
 def probe(exit_desc, run_python_over_tor, run_cmd_over_tor, **kwargs):
