@@ -59,17 +59,17 @@ def readcert(exit_fpr):
                     "GET", "/", headers=collections.OrderedDict(HTTP_HEADERS))
                 response = conn.getresponse()
             except ssl.CertificateError as err:
-                print("\n")
-                print(DOMAIN)
-                print(exit_url)
-                print("Error: " + str(err))
+                tmp = "Domain: " +str(DOMAIN) + "\n"
+                tmp += "Exit url: " + str(exit_url) + "\n"
+                tmp += "Error: " + str(err) + "\n"
                 try:
                     asn1cert = ssl.get_server_certificate((DOMAIN, PORT))
                     x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, asn1cert)
-                    print(x509.digest("sha256"))
+
+                    tmp += "Digest: " + str(x509.digest("sha256")) + "\n"
                 except Exception as err:
-                    print(err)
-                print("\n")
+                    tmp += "Exception: " + str(err) + "\n"
+                print(tmp +"\n")
             except Exception as err:
                pass
 
