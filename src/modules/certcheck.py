@@ -13,6 +13,7 @@ import logging
 import util
 import ssl
 import csv
+import OpenSSL
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,6 @@ def readcert(exit_fpr):
         pagereader = csv.DictReader(csvfile, delimiter=',')
         for page in pagereader:
             DOMAIN = page['webpage']
-            print(DOMAIN)
             HTTP_HEADERS = [
                 ("Host",
                  DOMAIN),
@@ -59,14 +59,19 @@ def readcert(exit_fpr):
                 conn.request(
                     "GET", "/", headers=collections.OrderedDict(HTTP_HEADERS))
                 response = conn.getresponse()
+            except ssl.CertificateError as err:
+                print("\n")
+                print(DOMAIN)
+                print(exit_url)
+                asn1cert = ssl.get_server_certificate((DOMAIN, PORT))
+                x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, asn1cert)
+                print(x509.digest("sha256"))
+                #print(err)
+                #print(err.__class__.__name__)
+                print("\n")
             except Exception as err:
-                print("\n")
-                # print(exit_url)
-                print(err)
-                print("\n")
-            print("OK")
-
-    print("Exit")
+               pass
+            mysock = None
 
 
 def probe(exit_desc, run_python_over_tor, run_cmd_over_tor, **kwargs):
