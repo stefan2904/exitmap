@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 # destinations = [("www.google.com", 443)]
 # DOMAIN, PORT = destinations[0]
 
-PORT = 443
+PORT = httplib.HTTPS_PORT  # 443
 
 
 def logCertError(domain, exitnode, error, fingerprint, exception):
@@ -39,7 +39,7 @@ def logCertError(domain, exitnode, error, fingerprint, exception):
           % (domain, exitnode, error, status))
 
 
-def handleCertError(err, domain, exitnode):
+def handleCertError(err, domain, exitnode, certErrorLogger):
     domain = str(domain)
     exitnode = str(exitnode)
     error = str(err)
@@ -56,10 +56,10 @@ def handleCertError(err, domain, exitnode):
     except Exception as err:
         exception = str(err)
 
-    logCertError(domain, exitnode, error, fingerprint, exception)
+    certErrorLogger(domain, exitnode, error, fingerprint, exception)
 
 
-def readCertOfPage(page, exitnode):
+def readCertOfPage(page, exitnode, certErrorLogger):
     """
     Read TLS certificate for the given page.
     Handle certificate errors accordingly.
@@ -83,29 +83,45 @@ def readCertOfPage(page, exitnode):
          '0')]
 
     try:
-        conn = httplib.HTTPSConnection(domain, PORT)
+        # c = ssl.create_default_context()
+        c = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        c.verify_mode = ssl.CERT_REQUIRED
+        c.check_hostname = True
+        c.load_verify_locations(cafile='mozillacerts.pem', capath=None)
+
+        # TODO: Make sure only TorBrowser Certs are loaded (how?)
+
+        # print('Number loaded CA certs: %d' % len(c.get_ca_certs()))
+        # print(ssl.get_default_verify_paths())
+
+        conn = httplib.HTTPSConnection(
+            domain, PORT, context=c)
         conn.request(
             'GET', '/', headers=collections.OrderedDict(HTTP_HEADERS))
         # response = conn.getresponse()
-
     except ssl.CertificateError as err:
-        handleCertError(err, domain, exitnode)
+        handleCertError(err, domain, exitnode, certErrorLogger)
 
     except Exception as err:
         pass
 
 
-def readCert(exit_fpr):
+def readCert(
+        exit_fpr=None,
+        certErrorLogger=logCertError,
+        sitelist='special.csv'):
     """
     Read TLS certificates for all domains in sitelist.
     """
 
-    sitelist = 'top-1m.csv'
+    # sitelist = 'top-1m.csv'
     # sitelist = 'special.csv'
 
-    exit_url = util.exiturl(exit_fpr)
+    exit_url = util.exiturl(exit_fpr) if exit_fpr is not None else '<noTOR>'
     log.debug('Probing exit relay \"%s\".' % exit_url)
 
     with open(sitelist) as csvfile:
         for page in csv.DictReader(csvfile, delimiter=','):
-            readCertOfPage(page, exit_fpr)
+            if exit_fpr is None:
+                print('Scanning %s ...' % page['webpage'])
+            readCertOfPage(page, exit_fpr, certErrorLogger)
