@@ -23,28 +23,44 @@ log = logging.getLogger(__name__)
 PORT = 443
 
 
-def handleCertificateError(err, domain, exit_url):
-    """
+def logCertError(domain, exitnode, error, fingerprint, exception):
+    if exception is None:
+        status = 'Fingerprint: %s' % fingerprint
+    else:
+        status = 'Exception:   %s' % exception
 
-    """
+    # TODO: log domain / exitnode / error / fingerprint to DB
 
-    tmp = 'Domain: ' + str(domain) + '\n'
-    tmp += 'Exit url: ' + str(exit_url) + '\n'
-    tmp += 'Error: ' + str(err) + '\n'
+    print('''
+        Domain:      %s
+        Exitnode:    %s
+        Error:       %s
+        %s
+        '''
+          % (domain, exitnode, error, status))
+
+
+def handleCertError(err, domain, exitnode):
+    domain = str(domain)
+    exitnode = str(exitnode)
+    error = str(err)
+    fingerprint = None
+    exception = None
 
     try:
-        asn1cert = ssl.get_server_certificate((domain, PORT))
-        x509 = OpenSSL.crypto.load_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, asn1cert)
+        asn1Cert = ssl.get_server_certificate((domain, PORT))
+        x509Cert = OpenSSL.crypto.load_certificate(
+            OpenSSL.crypto.FILETYPE_PEM, asn1Cert)
 
-        tmp += 'Digest: ' + str(x509.digest('sha256')) + '\n'
+        fingerprint = str(x509Cert.digest('sha256'))
+
     except Exception as err:
-        tmp += 'Exception: ' + str(err) + '\n'
+        exception = str(err)
 
-    print(tmp + '\n')
+    logCertError(domain, exitnode, error, fingerprint, exception)
 
 
-def readCertOfPage(page, exit_url):
+def readCertOfPage(page, exitnode):
     """
     Read TLS certificate for the given page.
     Handle certificate errors accordingly.
@@ -74,7 +90,7 @@ def readCertOfPage(page, exit_url):
         # response = conn.getresponse()
 
     except ssl.CertificateError as err:
-        handleCertificateError(err, domain, exit_url)
+        handleCertError(err, domain, exitnode)
 
     except Exception as err:
         pass
@@ -85,14 +101,15 @@ def readCert(exit_fpr):
     Read TLS certificates for all domains in sitelist.
     """
 
-    sitelist = 'top-1m.csv'
+    # sitelist = 'top-1m.csv'
+    sitelist = 'special.csv'
 
     exit_url = util.exiturl(exit_fpr)
     log.debug('Probing exit relay \"%s\".' % exit_url)
 
     with open(sitelist) as csvfile:
         for page in csv.DictReader(csvfile, delimiter=','):
-            readCertOfPage(page, exit_url)
+            readCertOfPage(page, exit_fpr)
 
 
 def probe(exit_desc, run_python_over_tor, run_cmd_over_tor, **kwargs):
