@@ -101,8 +101,8 @@ def readCert(exit_fpr):
     Read TLS certificates for all domains in sitelist.
     """
 
-    # sitelist = 'top-1m.csv'
-    sitelist = 'special.csv'
+    sitelist = 'top-1m.csv'
+    # sitelist = 'special.csv'
 
     exit_url = util.exiturl(exit_fpr)
     log.debug('Probing exit relay \"%s\".' % exit_url)
