@@ -22,13 +22,13 @@ log = logging.getLogger(__name__)
 PORT = httplib.HTTPS_PORT  # 443
 
 
-def logCertError(domain, exitnode, error, fingerprint, exception):
+def logCertError(domain, exitnode, error, fingerprint, exception, probeid):
     if exception is None:
         status = 'Fingerprint: %s' % fingerprint
     else:
         status = 'Exception:   %s' % exception
 
-    # TODO: log domain / exitnode / error / fingerprint to DB
+    # TODO: log domain / exitnode / error / fingerprint to DB ?
 
     print('''
         Domain:      %s
@@ -39,7 +39,7 @@ def logCertError(domain, exitnode, error, fingerprint, exception):
           % (domain, exitnode, error, status))
 
 
-def handleCertError(err, domain, exitnode, certErrorLogger):
+def handleCertError(err, domain, probeid, exitnode, certErrorLogger):
     domain = str(domain)
     exitnode = str(exitnode)
     error = str(err)
@@ -56,7 +56,13 @@ def handleCertError(err, domain, exitnode, certErrorLogger):
     except Exception as err:
         exception = str(err)
 
-    certErrorLogger(domain, exitnode, error, fingerprint, exception)
+    certErrorLogger(
+        domain,
+        exitnode,
+        error,
+        fingerprint,
+        exception,
+        int(probeid))
 
 
 def readCertOfPage(page, exitnode, certErrorLogger):
@@ -66,6 +72,7 @@ def readCertOfPage(page, exitnode, certErrorLogger):
     """
 
     domain = page['webpage']
+    probeid = page['id']
     HTTP_HEADERS = [
         ('Host',
          domain),
@@ -100,7 +107,7 @@ def readCertOfPage(page, exitnode, certErrorLogger):
             'GET', '/', headers=collections.OrderedDict(HTTP_HEADERS))
         # response = conn.getresponse()
     except ssl.CertificateError as err:
-        handleCertError(err, domain, exitnode, certErrorLogger)
+        handleCertError(err, domain, probeid, exitnode, certErrorLogger)
 
     except Exception as err:
         pass
@@ -113,6 +120,8 @@ def readCert(
     """
     Read TLS certificates for all domains in sitelist.
     """
+
+    # TODO: only iterate over 'interesting' sites (filtered.csv)
 
     # sitelist = 'top-1m.csv'
     # sitelist = 'special.csv'

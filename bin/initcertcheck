@@ -25,20 +25,13 @@ src_path = os.path.abspath(os.path.join(current_path, "../src"))
 sys.path.insert(0, src_path)
 from certutil import *
 
-id = 1
 
-
-def certLogger(
-        domain,
-        exitnode,
-        error,
-        fingerprint,
-        exception,
-        exit_fpr='<noTor>'):
-    print('%d,%s,%s' % (id, domain, fingerprint))
-    id += 1
+def certLogger(domain, exitnode, error, fingerprint, exception, probeid):
+    print('%d,%s,%s' % (probeid, domain, fingerprint))
 
 
 print('id,webpage,fingerprint')
-# readCert(sitelist='top-1m.csv', certErrorLogger=certLogger)
-readCert(sitelist='special.csv', certErrorLogger=certLogger)
+readCert(sitelist='top-1m.csv', certErrorLogger=certLogger, exit_fpr='<noTor>')
+# readCert(sitelist='special.csv', certErrorLogger=certLogger, exit_fpr='<noTor>')
+
+# TODO: store interesting sites (filtered.csv)
