@@ -13,6 +13,7 @@ import util
 import ssl
 import csv
 import OpenSSL
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -39,8 +40,8 @@ def logCertError(domain, exitnode, error, fingerprint, exception, probeid):
           % (domain, exitnode, error, status))
 
 
-def handleCertError(err, domain, probeid, exitnode, certErrorLogger):
-    domain = str(domain)
+def handleCertError(err, page, probeid, exitnode, certErrorLogger):
+    domain = str(page['webpage'])
     exitnode = str(exitnode)
     error = str(err)
     fingerprint = None
@@ -52,6 +53,8 @@ def handleCertError(err, domain, probeid, exitnode, certErrorLogger):
             OpenSSL.crypto.FILETYPE_PEM, asn1Cert)
 
         fingerprint = str(x509Cert.digest('sha256'))
+        if (fingerprint != page['fingerprint']):
+            foundLogger(page, exitnode, fingerprint)
 
     except Exception as err:
         exception = str(err)
@@ -63,6 +66,22 @@ def handleCertError(err, domain, probeid, exitnode, certErrorLogger):
         fingerprint,
         exception,
         int(probeid))
+
+def foundLogger(page, exitnode, fingerprint):
+
+    fd = open('found.csv', 'a')
+    message = page['id'] + ',' + page['webpage'] + ','+ page['fingerprint'] + ',' + exitnode + ',' + fingerprint + '\n'
+    fd.write(message)
+    fd.close()
+
+    print('''
+        Domain:      %s
+        Exitnode:    %s
+        Fingerprint:       %s
+        Expected fingerprint: %s
+        '''
+          % (page['webpage'], exitnode, fingerprint, page['fingerprint'] ))
+
 
 
 def readCertOfPage(page, exitnode, certErrorLogger):
@@ -91,24 +110,31 @@ def readCertOfPage(page, exitnode, certErrorLogger):
 
     try:
         # c = ssl.create_default_context()
-        c = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        c.verify_mode = ssl.CERT_REQUIRED
-        c.check_hostname = True
-        c.load_verify_locations(cafile='mozillacerts.pem', capath=None)
+        #c = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        #c.verify_mode = ssl.CERT_REQUIRED
+        #c.check_hostname = True
+        #c.load_verify_locations(cafile='mozillacerts.pem', capath=None)
 
         # TODO: Make sure only TorBrowser Certs are loaded (how?)
 
         # print('Number loaded CA certs: %d' % len(c.get_ca_certs()))
         # print(ssl.get_default_verify_paths())
 
-        conn = httplib.HTTPSConnection(
-            domain, PORT, context=c)
-        conn.request(
-            'GET', '/', headers=collections.OrderedDict(HTTP_HEADERS))
+        #conn = httplib.HTTPSConnection(
+        #    domain, PORT, context=c)
+        #conn.request(
+        #    'GET', '/', headers=collections.OrderedDict(HTTP_HEADERS))
         # response = conn.getresponse()
-    except ssl.CertificateError as err:
-        handleCertError(err, domain, probeid, exitnode, certErrorLogger)
 
+        TRUSTSTORE = 'mozillacerts.pem'
+        #TRUSTSTORE = 'letsencrypt/'
+
+        r = requests.get('https://' + domain, timeout=2, verify=TRUSTSTORE).text
+        
+    except requests.exceptions.SSLError as err:
+        handleCertError(err, page, probeid, exitnode, certErrorLogger)
+    except requests.exceptions.Timeout as err:
+        print('%s: timeout' % (domain))
     except Exception as err:
         pass
 
@@ -116,7 +142,7 @@ def readCertOfPage(page, exitnode, certErrorLogger):
 def readCert(
         exit_fpr=None,
         certErrorLogger=logCertError,
-        sitelist='special.csv'):
+        sitelist='out.csv'):
     """
     Read TLS certificates for all domains in sitelist.
     """
