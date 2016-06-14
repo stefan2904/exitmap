@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 PORT = httplib.HTTPS_PORT  # 443
 
-LOGSSLERRORS = False
+LOGSSLERRORS = True
 
 
 def logCertError(domain, exitnode, error, fingerprint, exception, probeid):
