@@ -22,6 +22,8 @@ log = logging.getLogger(__name__)
 
 PORT = httplib.HTTPS_PORT  # 443
 
+LOGSSLERRORS = False
+
 
 def logCertError(domain, exitnode, error, fingerprint, exception, probeid):
     if exception is None:
@@ -59,13 +61,14 @@ def handleCertError(err, page, probeid, exitnode, certErrorLogger):
     except Exception as err:
         exception = str(err)
 
-    certErrorLogger(
-        domain,
-        exitnode,
-        error,
-        fingerprint,
-        exception,
-        int(probeid))
+    if LOGSSLERRORS:
+        certErrorLogger(
+            domain,
+            exitnode,
+            error,
+            fingerprint,
+            exception,
+            int(probeid))
 
 
 def foundLogger(page, exitnode, fingerprint):
@@ -146,7 +149,7 @@ def readCertOfPage(page, exitnode, certErrorLogger):
 def readCert(
         exit_fpr=None,
         certErrorLogger=logCertError,
-        sitelist='special.csv'):
+        sitelist='filtered.csv'):
     """
     Read TLS certificates for all domains in sitelist.
     """
