@@ -67,10 +67,12 @@ def handleCertError(err, page, probeid, exitnode, certErrorLogger):
         exception,
         int(probeid))
 
+
 def foundLogger(page, exitnode, fingerprint):
 
     fd = open('found.csv', 'a')
-    message = page['id'] + ',' + page['webpage'] + ','+ page['fingerprint'] + ',' + exitnode + ',' + fingerprint + '\n'
+    message = page['id'] + ',' + page['webpage'] + ',' + \
+        page['fingerprint'] + ',' + exitnode + ',' + fingerprint + '\n'
     fd.write(message)
     fd.close()
 
@@ -80,8 +82,7 @@ def foundLogger(page, exitnode, fingerprint):
         Fingerprint:       %s
         Expected fingerprint: %s
         '''
-          % (page['webpage'], exitnode, fingerprint, page['fingerprint'] ))
-
+          % (page['webpage'], exitnode, fingerprint, page['fingerprint']))
 
 
 def readCertOfPage(page, exitnode, certErrorLogger):
@@ -120,17 +121,20 @@ def readCertOfPage(page, exitnode, certErrorLogger):
         # print('Number loaded CA certs: %d' % len(c.get_ca_certs()))
         # print(ssl.get_default_verify_paths())
 
-        #conn = httplib.HTTPSConnection(
+        # conn = httplib.HTTPSConnection(
         #    domain, PORT, context=c)
-        #conn.request(
+        # conn.request(
         #    'GET', '/', headers=collections.OrderedDict(HTTP_HEADERS))
         # response = conn.getresponse()
 
         TRUSTSTORE = 'mozillacerts.pem'
         #TRUSTSTORE = 'letsencrypt/'
 
-        r = requests.get('https://' + domain, timeout=2, verify=TRUSTSTORE).text
-        
+        r = requests.get(
+            'https://' + domain,
+            timeout=2,
+            verify=TRUSTSTORE).text
+
     except requests.exceptions.SSLError as err:
         handleCertError(err, page, probeid, exitnode, certErrorLogger)
     except requests.exceptions.Timeout as err:
@@ -142,7 +146,7 @@ def readCertOfPage(page, exitnode, certErrorLogger):
 def readCert(
         exit_fpr=None,
         certErrorLogger=logCertError,
-        sitelist='out.csv'):
+        sitelist='special.csv'):
     """
     Read TLS certificates for all domains in sitelist.
     """
