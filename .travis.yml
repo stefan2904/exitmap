@@ -5,7 +5,7 @@ python:
     - "3.3"
     - "3.4"
     - "3.5"
-    - "pypy"
+#    - "pypy" # cryptography 1.0 is not compatible with PyPy < 2.6.
 install:
     - pip install -r requirements.txt
     - pip install -r requirements-dev.txt
