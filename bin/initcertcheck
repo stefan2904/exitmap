@@ -31,7 +31,11 @@ def certLogger(domain, exitnode, error, fingerprint, exception, probeid):
 
 
 print('id,webpage,fingerprint')
-readCert(sitelist='top-1m.csv', certErrorLogger=certLogger, exit_fpr='<noTor>')
+readCert(
+    sitelist='top-1m.csv',
+    certErrorLogger=certLogger,
+    exit_fpr='<noTor>',
+    logSSLerrors=True)
 # readCert(sitelist='special.csv', certErrorLogger=certLogger, exit_fpr='<noTor>')
 
 # TODO: store interesting sites (filtered.csv)
